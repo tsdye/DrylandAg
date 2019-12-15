@@ -43,7 +43,6 @@ dryland_ag <- function(root_dir,
     library('rgeos')
     library('khroma')
     library('sf')
-    library('scales')
 
     ## Utility function to generate file paths that can be used in series
     filename_splice <- function(pathname, filename, splice) {
