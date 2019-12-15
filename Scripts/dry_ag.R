@@ -44,10 +44,21 @@ dryland_ag <- function(root_dir,
     library('khroma')
     library('sf')
 
+#### Local functions
+    ## set up some functions for plotting
+    addHI3dryline <- function() plot(HI3dry, add=TRUE)  # show outline
+
+    ## set scale for stacks
+    fixstackcolors <- function(x,n)
+        seq(min(minValue(x)),
+            max(maxValue(x)),
+            length.out = n)
+
     ## Utility function to generate file paths that can be used in series
     filename_splice <- function(pathname, filename, splice) {
         name_parts <- strsplit(basename(filename), ".", fixed = TRUE)
-        file.path(pathname, paste0(name_parts[[1]][1], splice, ".", name_parts[[1]][2]))
+        file.path(pathname, paste0(name_parts[[1]][1], splice, ".",
+                                   name_parts[[1]][2]))
     }
 
     ## function for plotting graphs
@@ -72,6 +83,7 @@ dryland_ag <- function(root_dir,
         p <- p + facet_wrap(~plot_title, ncol = 2, scales = "free")
         ggsave(filename = out_file, plot = p, height = height)}
 
+#### Set up
     ## Set working directories
     setwd(root_dir)
     if(verbose == TRUE) message("Set root directory to ", root_dir)
@@ -81,11 +93,13 @@ dryland_ag <- function(root_dir,
     ## from http://evapotranspiration.geography.hawaii.edu/,
     ## http://rainfall.geography.hawaii.edu
     gis_dir <- file.path(root_dir, "gis_files")
-    if(!file.exists(gis_dir)) stop(sprintf("Folder %s does not exist", gis_dir))
+    if(!file.exists(gis_dir)) stop(sprintf("Folder %s does not exist",
+                                           gis_dir))
 
     ## Set location of spatial_data tiffs
     tiff_dir <- file.path(root_dir, "spatial_data")
-    if(!file.exists(tiff_dir)) stop(sprintf("Folder %s does not exist", tiff_dir))
+    if(!file.exists(tiff_dir)) stop(sprintf("Folder %s does not exist",
+                                            tiff_dir))
 
     ## Output folder
     if(!file.exists(output_dir))
@@ -161,69 +175,82 @@ dryland_ag <- function(root_dir,
     ## ET-relevant data, annual and monthly
     ## (source: Evapotranspiration of HI)
     ## Solar Radiation (SW)
-    swdirs <- list.dirs(file.path(gis_dir, "CloudySWGlobTerrain_month_raster"),
+    swdirs <- list.dirs(file.path(gis_dir,
+                                  "CloudySWGlobTerrain_month_raster"),
                         full.names=T)
     sw <- swdirs[grep("cl_sw", swdirs)]
 
     ## Diffuse Radiation (diffuse)
-    diffdirs <- list.dirs(file.path(gis_dir, "DiffuseRadiation_month_raster"),
+    diffdirs <- list.dirs(file.path(gis_dir,
+                                    "DiffuseRadiation_month_raster"),
                           full.names=T)
     dif <- diffdirs[grep("dif_rd", diffdirs)]
 
     ## Penman Monteith PET
-    petdirs <- list.dirs(file.path(gis_dir, "Penman_ET0_mm_month_raster"),
+    petdirs <- list.dirs(file.path(gis_dir,
+                                   "Penman_ET0_mm_month_raster"),
                          full.names=T)
     pet <- petdirs[grep("pen_mm", petdirs)]
 
     ## Actual ET
-    aetdirs <- list.dirs(file.path(gis_dir, "AET_mm_month_raster"),
+    aetdirs <- list.dirs(file.path(gis_dir,
+                                   "AET_mm_month_raster"),
                          full.names=T)
     aet <- aetdirs[grep("aet_mm", aetdirs)]
 
     ## Soil Moisture
-    smdirs <- list.dirs(file.path(gis_dir, "SoilMoisture_month_raster"),
+    smdirs <- list.dirs(file.path(gis_dir,
+                                  "SoilMoisture_month_raster"),
                         full.names=T)
     sm <- smdirs[grep("sl_mst", smdirs)]
 
     ## Relative Humidity
-    rhdirs <- list.dirs(file.path(gis_dir, "RH_month_raster"),
+    rhdirs <- list.dirs(file.path(gis_dir,
+                                  "RH_month_raster"),
                         full.names=T)
     rh <- rhdirs[grep("rh_", rhdirs)]
 
     ## Vapor pressure deficit
-    vpddirs <- list.dirs(file.path(gis_dir, "VPD_month_raster"),
+    vpddirs <- list.dirs(file.path(gis_dir,
+                                   "VPD_month_raster"),
                          full.names=T)
     vpd <- vpddirs[grep("vpd_", vpddirs)]
 
 ### Temperature
     ## Tair Max
-    tmaxdirs <- list.dirs(file.path(gis_dir, "Tmax_month_raster"),
+    tmaxdirs <- list.dirs(file.path(gis_dir,
+                                    "Tmax_month_raster"),
                           full.names=T)
     tmax <- tmaxdirs[grep("tmax", tmaxdirs)]
 
     ## Tair Min
-    tmindirs <- list.dirs(file.path(gis_dir, "Tmin_month_raster"),
+    tmindirs <- list.dirs(file.path(gis_dir,
+                                    "Tmin_month_raster"),
                           full.names=T)
     tmin <- tmindirs[grep("tmin", tmindirs)]
 
     ## Tair Mean
-    tmeandirs <- list.dirs(file.path(gis_dir, "Tair_month_raster"),
+    tmeandirs <- list.dirs(file.path(gis_dir,
+                                     "Tair_month_raster"),
                            full.names=T)
     tmean <- tmeandirs[grep("tair", tmeandirs)]
 
     ## Tsurf
-    tsurfdirs <- list.dirs(file.path(gis_dir, "TSurf_month_raster"),
+    tsurfdirs <- list.dirs(file.path(gis_dir,
+                                     "TSurf_month_raster"),
                            full.names=T)
     tsurf <- tsurfdirs[grep("tsurf", tsurfdirs)]
 
 ### Cloud and Wind
     ## Cloud cover
-    clouddirs <- list.dirs(file.path(gis_dir, "HITemp_rastercovariates/CloudFreq_month_raster"),
+    clouddirs <- list.dirs(file.path(gis_dir,
+                                     "HITemp_rastercovariates/CloudFreq_month_raster"),
                            full.names=T)
     clouds <- clouddirs[grep("cl_frq", clouddirs)]
 
     ## Wind speed
-    winddirs <- list.dirs(file.path(gis_dir, "HITemp_rastercovariates/Wind_speed_ann_hr_raster"),
+    winddirs <- list.dirs(file.path(gis_dir,
+                                    "HITemp_rastercovariates/Wind_speed_ann_hr_raster"),
                           full.names=T)
     winds <- winddirs[grep("wind_sd", winddirs)]
 
@@ -258,7 +285,8 @@ dryland_ag <- function(root_dir,
     mo.sort <- numeric(length = 13)
     mo.sort[mo.order] <- 1:13
 
-    ## Organize directories for monthly rasters in order of month (rather than alphabetically)
+    ## Organize directories for monthly rasters in order of month
+    ## (rather than alphabetically)
     mofiles <- lapply(alldirs, FUN=function(x) x[mo.sort[2:13]])
     mostack <- lapply(mofiles, FUN=stack)  # read into raster stack
 
@@ -288,7 +316,7 @@ dryland_ag <- function(root_dir,
     windsp <- stack(meanwinds, maxwinds, minwinds, cvwinds)
     names(windsp)<-c("meanws", "maxws", "minws", "cvws")
 
-#### Combine all of the above ####
+#### Combine all of the above
     allstacks<-c(dem = dem.r,
                                         # annual
                  rf.ann = staterf.ann,
@@ -305,10 +333,11 @@ dryland_ag <- function(root_dir,
                  aetrf.mo = aetrfstack.mo,
                  rfseason = rfseason)
 
-    ## Visualize all of these rasters as maps using plot default setting
+    ## Visualize the rasters as maps using plot default setting
     if (plot_raster_visualization) {
         out_file <- file.path(output_dir, raster_visualization_file)
-        if(verbose == TRUE) message("Writing raster visualizations to ", out_file)
+        if(verbose == TRUE) message("Writing raster visualizations to ",
+                                    out_file)
         pdf(out_file, onefile = T)
         for (i in 1:length(allstacks)) {
             plot(allstacks[[i]],
@@ -330,9 +359,12 @@ dryland_ag <- function(root_dir,
 
     ## Create MASKS so we focus on field systems
     ## Note DEM, Temp layers, and 250m ET atlas layers have diff CRS, resolutions!
-    HI3dry.crop10<-is.na(mask(allcropped$dem, HI3dry))    # DEM mask, note 10m resolution
-    HI3dry.crop250<-is.na(mask(allcropped$rf.ann, HI3dry)) # All others: 250m, +ellps=WGS84
-    HI3dry.crop250temp<-is.na(mask(allcropped$tmax, HI3dry.temp))# Temp layer mask, +ellps=GRS80
+                                        # DEM mask, note 10m resolution
+    HI3dry.crop10<-is.na(mask(allcropped$dem, HI3dry))
+                                        # All others: 250m, +ellps=WGS84
+    HI3dry.crop250<-is.na(mask(allcropped$rf.ann, HI3dry))
+                                        # Temp layer mask, +ellps=GRS80
+    HI3dry.crop250temp<-is.na(mask(allcropped$tmax, HI3dry.temp))
 
     ## Create a list of masked rasters
     allmasked<-list()
@@ -352,14 +384,6 @@ dryland_ag <- function(root_dir,
 
 #### Aids to data visualization ####
 
-    ## set up some functions for plotting
-    addHI3dryline <- function() plot(HI3dry, add=TRUE)  # show outline
-
-    ## set scale for stacks
-    fixstackcolors <- function(x,n)
-        seq(min(minValue(x)),
-            max(maxValue(x)),
-            length.out = n)
 
     ## Crop the ahupuaa shapefile for plotting
     ahucrop <- crop(ahupuaa, ext.HI3dry)
@@ -377,14 +401,15 @@ dryland_ag <- function(root_dir,
             labs <- seq(from = rng[1], to = rng[2], length = 5)
             arg <- list(at = labs, labels = round(labs, 2))
             fixbreaks <- fixstackcolors(allmasked[[i]], 15)
-
-            if(names(allmasked)[i] %in% c("rfseason","windsp"))  # DON'T fix colors for these stacks
+                                        # DON'T fix colors for these stacks
+            if(names(allmasked)[i] %in% c("rfseason","windsp"))
                 for (j in 1:nlayers(allmasked[[i]])) {
                     plot(ahucrop, main = names(allmasked[[i]][[j]]),
                          lwd = 0.5)
                     plot(allmasked[[i]][[j]], col = rev(my.colors(15)),
                          alpha = 0.8, add = T) }
-            else                   # DO fix colors for these stacks
+            else
+                                        # DO fix colors for these stacks
                 if(names(allmasked)[i] %in% c("sw","pet","vpd", "tmax",
                                               "tmin", "tmean", "tsurf",
                                               "aridity.ann", "aridity.mo"))
@@ -394,7 +419,8 @@ dryland_ag <- function(root_dir,
                         plot(allmasked[[i]][[j]], breaks = fixbreaks,
                              col = rev(rf.colors(15)),
                              axis.args = arg, alpha = 0.9, add = T) }
-            else ## DO fix colors for these stacks
+            else
+                                        # DO fix colors for these stacks
                 for (j in 1:nlayers(allmasked[[i]])) {
                     plot(ahucrop,main = names(allmasked[[i]][[j]]),
                          lwd = 0.5)
@@ -404,6 +430,7 @@ dryland_ag <- function(root_dir,
         }
         dev.off()
     }
+
     ## Now save maps as geotiffs
     if(plot_geo_tiffs == TRUE) {
         if(verbose == TRUE)
@@ -419,7 +446,8 @@ dryland_ag <- function(root_dir,
             else
                 writeRaster(allmasked[[i]],
                             filename = file.path(geo_tiff_dir,
-                                                 paste0(names(allmasked)[i], "stack.tif")),
+                                                 paste0(names(allmasked)[i],
+                                                        "stack.tif")),
                             format = "GTiff",
                             bylayer = F,
                         overwrite = T) }
@@ -451,7 +479,8 @@ dryland_ag <- function(root_dir,
     mo <- which(lapply(X = rasters[[1]], FUN = nlayers) == 12)
 
     ## Which raster stacks need to be analyzed separately?
-    sep <- which(lapply(X = rasters[[1]], FUN = nlayers) %in% c(4, 5)) # wind, rfseason
+                                        # wind, rfseason
+    sep <- which(lapply(X = rasters[[1]], FUN = nlayers) %in% c(4, 5))
 
     ## Return value
     res <- list(polygons = polygons,
@@ -466,7 +495,8 @@ dryland_ag <- function(root_dir,
     if (plot_annual_summary == TRUE) {
 
         out_file <- filename_splice(output_dir, annual_summary_file, "_1")
-        if(verbose == TRUE) message(sprintf("Writing annual metrics to %s", out_file))
+        if(verbose == TRUE)
+            message(sprintf("Writing annual metrics to %s", out_file))
 
         comb_dfs <- NULL
         for (i in 1:length(res$annual)) {
@@ -496,8 +526,9 @@ dryland_ag <- function(root_dir,
         comb_dfs <- NULL
         for(i in 1:nlayers(res$rasters[[1]][[res$separate[1]]])) {
             dfs <- lapply(X = res$rasters,
-                          FUN = function(x) as.data.frame(raster(x[[res$separate[[1]]]],
-                                                                 layer = i)))
+                          FUN = function(x)
+                              as.data.frame(raster(x[[res$separate[[1]]]],
+                                                   layer = i)))
 
             ## add columns used for plotting and remove rows with NA data values
             ## polygon_name distinguishes areas in each of the plots
@@ -564,14 +595,17 @@ dryland_ag <- function(root_dir,
     monthly_plot_width = length(res$rasters) * min_plot_size * 1.5
 
     out_file <- file.path(output_dir, monthly_summary_file)
-    if(verbose == TRUE) message(sprintf("Writing monthly metrics to %s", out_file))
+    if(verbose == TRUE) message(sprintf("Writing monthly metrics to %s",
+                                        out_file))
 
     comb_dfs <- NULL
     ## make data frame
     for (i in res$monthly) {
 
-        ## Convert selected rasters, one for each area, into a list of data frames
-        dfs <- lapply(X = res$rasters, FUN = function(x) as.data.frame(x[[i]]))
+        ## Convert selected rasters, one for each area,
+        ## into a list of data frames
+        dfs <- lapply(X = res$rasters, FUN = function(x)
+            as.data.frame(x[[i]]))
 
         ## add columns used for plotting and remove rows with NA data values
         ## polygon_name distinguishes areas in each of the plots
@@ -580,7 +614,8 @@ dryland_ag <- function(root_dir,
             names(dfs[[j]]) <- month.abb
             dfs[[j]]$polygon_name <- res$polygon_names[j]
             dfs[[j]]$facet <- names(res$rasters[[1]])[i]
-            dfs[[j]] <- suppressMessages(reshape2::melt(dfs[[j]], na.rm = TRUE))}
+            dfs[[j]] <- suppressMessages(reshape2::melt(dfs[[j]],
+                                                        na.rm = TRUE))}
 
         comb_dfs <- dplyr::bind_rows(comb_dfs, dfs)}
 
@@ -606,7 +641,7 @@ dryland_ag <- function(root_dir,
     ggsave(filename = out_file, plot = p, height = monthly_plot_height,
            width = monthly_plot_width)
 
-res } # end of function
+    res } # end of function
 
 ## #########################################################################################
 ## ################## Make pretty figures for publication ##################################
