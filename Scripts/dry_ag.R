@@ -43,6 +43,7 @@ dryland_ag <- function(root_dir,
     library('rgeos')
     library('khroma')
     library('sf')
+    library('ggplot2')
 
 #### Local functions
     ## set up some functions for plotting
