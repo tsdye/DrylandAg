@@ -20,6 +20,7 @@ dryland_ag <- function(root_dir,
                        layer_name,
                        name_column,
                        ahupuaa_shape_file,
+                       legend_order = NULL,
                        output_dir = root_dir,
                        raster_visualization_file = "raster_visualization_file.pdf",
                        plot_raster_visualization = TRUE,
@@ -62,7 +63,7 @@ dryland_ag <- function(root_dir,
                                    name_parts[[1]][2]))
     }
 
-    ## function for plotting graphs
+    ## function for plotting comparative graphs
     comparative_graph <- function(data, palette, out_file, height) {
         p <- ggplot(data = data, aes(x = value,
                                          fill = polygon_name,
@@ -141,11 +142,8 @@ dryland_ag <- function(root_dir,
     else
         stop(sprintf("Unable to read %s", shape_file))
 
+    ## Get the polygon names from the shape file
     polygon_names <- read_sf(shape_file, layer_name)[[name_column]]
-    ## grab polygon names for plotting
-    ## TODO Not working
-    ## polygon_names <- in_shape[[name_column]]
-    ## polygon_names <- c("foo", "bar", "baz")
 
     ## Set up different projections/datums since rasters are different CRS
     HI3dry <- spTransform(in_shape, CRS = crs_1)
@@ -516,6 +514,11 @@ dryland_ag <- function(root_dir,
 
             comb_dfs <- dplyr::bind_rows(comb_dfs, dfs)}
 
+        ## Possibly order the legend labels
+        if(!is.null(legend_order))
+            comb_dfs$polygon_name <- factor(comb_dfs$polygon_name,
+                                            levels = legend_order)
+
         comparative_graph(data = comb_dfs, palette = qualitative_palette,
                           out_file = out_file, height = annual_plot_height[1])
 
@@ -541,6 +544,11 @@ dryland_ag <- function(root_dir,
                 dfs[[j]] <- dfs[[j]][!is.na(dfs[[j]]$value), ]}
 
             comb_dfs <- dplyr::bind_rows(comb_dfs, dfs)}
+
+        ## Possibly order the legend labels
+        if(!is.null(legend_order))
+            comb_dfs$polygon_name <- factor(comb_dfs$polygon_name,
+                                            levels = legend_order)
 
         comparative_graph(data = comb_dfs, palette = qualitative_palette,
                           out_file = out_file, height = annual_plot_height[2])
@@ -585,6 +593,11 @@ dryland_ag <- function(root_dir,
 
             comb_dfs <- dplyr::bind_rows(comb_dfs, dfs)}
 
+        ## Possibly order the legend labels
+        if(!is.null(legend_order))
+            comb_dfs$polygon_name <- factor(comb_dfs$polygon_name,
+                                            levels = legend_order)
+
         comparative_graph(data = comb_dfs, palette = qualitative_palette,
                           out_file = out_file, height = annual_plot_height[3])}
 
@@ -616,9 +629,15 @@ dryland_ag <- function(root_dir,
             dfs[[j]]$polygon_name <- res$polygon_names[j]
             dfs[[j]]$facet <- names(res$rasters[[1]])[i]
             dfs[[j]] <- suppressMessages(reshape2::melt(dfs[[j]],
-                                                        na.rm = TRUE))}
+                                                        na.rm = TRUE))
+        }
 
         comb_dfs <- dplyr::bind_rows(comb_dfs, dfs)}
+
+    ## Possibly order the legend labels
+    if(!is.null(legend_order))
+        comb_dfs$polygon_name <- factor(comb_dfs$polygon_name,
+                                        levels = legend_order)
 
     ## boxplots
     p <- ggplot(data = comb_dfs, aes(x = variable, y = value,
