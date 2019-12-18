@@ -76,12 +76,12 @@ dryland_ag <- function(root_dir,
         p <- p + theme_bw()
         p <- p + guides(color = FALSE)
         p <- p + switch(palette,
-                        "light" = scale_colour_light(),
+                        "contrast" = scale_color_contrast(),
                         "bright" = scale_colour_bright(),
                         "vibrant" = scale_colour_vibrant(),
                         "muted" = scale_colour_muted())
         p <- p + switch(palette,
-                        "light" = scale_fill_light(),
+                        "contrast" = scale_fill_contrast(),
                         "bright" = scale_fill_bright(),
                         "vibrant" = scale_fill_vibrant(),
                         "muted" = scale_fill_muted())
@@ -116,7 +116,7 @@ dryland_ag <- function(root_dir,
 
     ## Output subfolder for geo-tiffs
     geo_tiff_dir <- file.path(output_dir, "geo_tiffs")
-    if(!file.exists(geo_tiff_dir))
+    if((plot_geo_tiffs == TRUE) & !file.exists(geo_tiff_dir))
         if(askYesNo(msg = sprintf("Output sub-directory %s does not exist.  Create?",
                                   geo_tiff_dir)))
             dir.create(geo_tiff_dir)
@@ -651,12 +651,12 @@ dryland_ag <- function(root_dir,
     p <- p + theme_bw()
     p <- p + guides(color = FALSE)
     p <- p + switch(qualitative_palette,
-                    "light" = scale_colour_light(),
+                    "contrast" = scale_color_contrast(),
                     "bright" = scale_colour_bright(),
                     "vibrant" = scale_colour_vibrant(),
                     "muted" = scale_colour_muted())
     p <- p + switch(qualitative_palette,
-                    "light" = scale_fill_light(),
+                    "contrast" = scale_fill_contrast(),
                     "bright" = scale_fill_bright(),
                     "vibrant" = scale_fill_vibrant(),
                     "muted" = scale_fill_muted())
