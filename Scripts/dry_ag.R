@@ -31,6 +31,8 @@ dryland_ag <- function(root_dir,
                        plot_annual_summary = TRUE,
                        monthly_summary_file = "monthly_summary_file.pdf",
                        plot_monthly_summary = TRUE,
+                       results_file = "dryland_ag_result_list.R",
+                       save_results_file = TRUE,
                        annual_plot_height = c(15, 4, 6),
                        interest_area = c(-156.2, -155.4, 18.9, 20.3),
                        diverging_palette = "BuRd",
@@ -48,6 +50,7 @@ dryland_ag <- function(root_dir,
 
 #### Local functions
     ## set up some functions for plotting
+    ## TD, deprecated?
     addHI3dryline <- function() plot(HI3dry, add=TRUE)  # show outline
 
     ## set scale for stacks
@@ -660,6 +663,13 @@ dryland_ag <- function(root_dir,
     p <- p + facet_grid(facet ~ ., scales = "free_y")
     ggsave(filename = out_file, plot = p, height = monthly_plot_height,
            width = monthly_plot_width)
+
+    if (save_results_file == TRUE) {
+        if(verbose == TRUE) {
+            out_file <- file.path(output_dir, results_file)
+            fmt <- "Writing results to %s.\nUse the function readRDS(file = \"%s\") to read them.\n"
+            message(sprintf(fmt = fmt, out_file, out_file))}
+        saveRDS(object = res, file = out_file)}
 
     res } # end of function
 
