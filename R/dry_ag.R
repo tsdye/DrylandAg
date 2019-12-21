@@ -12,7 +12,7 @@
 ## pages at geography.hawaii.edu
 ## 2) spatial_data for spatial data tiffs
 
-## Assumes a directory structure under output_dir
+## Creates a directory structure under output_dir
 ## 3) geo_tiffs for geo-tiffs
 
 dryland_ag <- function(root_dir,
@@ -20,73 +20,32 @@ dryland_ag <- function(root_dir,
                        layer_name,
                        name_column,
                        ahupuaa_shape_file,
-                       legend_order = NULL,
                        output_dir = root_dir,
                        raster_visualization_file = "raster_visualization_file.pdf",
                        plot_raster_visualization = TRUE,
                        area_comparison_file = "area_comparison_file.pdf",
                        plot_area_comparison = TRUE,
                        plot_geo_tiffs = TRUE,
-                       annual_summary_file = "annual_summary_file.pdf",
-                       plot_annual_summary = TRUE,
-                       monthly_summary_file = "monthly_summary_file.pdf",
-                       plot_monthly_summary = TRUE,
                        results_file = "dryland_ag_result_list.R",
-                       save_results_file = TRUE,
-                       annual_plot_height = c(15, 4, 6),
                        interest_area = c(-156.2, -155.4, 18.9, 20.3),
                        diverging_palette = "BuRd",
                        sequential_palette = "iridescent",
-                       qualitative_palette = "bright",
                        verbose = TRUE) {
     ## Load libraries
     library('sp')
     library('raster')
     library('rgdal')
     library('rgeos')
-    library('khroma')
-    library('sf')
-    library('ggplot2')
+    ## library('sf')
+    ## library('khroma')
 
-#### Local functions
-    ## set up some functions for plotting
-    ## TD, deprecated?
-    addHI3dryline <- function() plot(HI3dry, add=TRUE)  # show outline
+#### Local function
 
     ## set scale for stacks
-    fixstackcolors <- function(x,n)
+    fixstackcolors <- function(x, n)
         seq(min(minValue(x)),
             max(maxValue(x)),
             length.out = n)
-
-    ## Utility function to generate file paths that can be used in series
-    filename_splice <- function(pathname, filename, splice) {
-        name_parts <- strsplit(basename(filename), ".", fixed = TRUE)
-        file.path(pathname, paste0(name_parts[[1]][1], splice, ".",
-                                   name_parts[[1]][2]))
-    }
-
-    ## function for plotting comparative graphs
-    comparative_graph <- function(data, palette, out_file, height) {
-        p <- ggplot(data = data, aes(x = value,
-                                         fill = polygon_name,
-                                         color = polygon_name))
-        p <- p + geom_density(alpha = 0.4)
-        p <- p + labs(y = "Density", x = NULL, fill = "Name")
-        p <- p + theme_bw()
-        p <- p + guides(color = FALSE)
-        p <- p + switch(palette,
-                        "contrast" = scale_color_contrast(),
-                        "bright" = scale_colour_bright(),
-                        "vibrant" = scale_colour_vibrant(),
-                        "muted" = scale_colour_muted())
-        p <- p + switch(palette,
-                        "contrast" = scale_fill_contrast(),
-                        "bright" = scale_fill_bright(),
-                        "vibrant" = scale_fill_vibrant(),
-                        "muted" = scale_fill_muted())
-        p <- p + facet_wrap(~plot_title, ncol = 2, scales = "free")
-        ggsave(filename = out_file, plot = p, height = height)}
 
 #### Set up
     ## Set working directories
@@ -130,15 +89,30 @@ dryland_ag <- function(root_dir,
 
     ## Set up colors for plotting raster data
     ## maps use 15 colors
-    my_colors <- colour(sequential_palette)
+    sequential_palettes <- c("YlOrBr", "iridescent", "smooth rainbow")
+    if(!is.element(sequential_palette, sequential_palettes))
+        stop(sprintf("Sequential palette %s is not one of %s, %s, or %s",
+                     sequential_palette,
+                     sequential_palettes[1],
+                     sequential_palettes[2],
+                     sequential_palettes[3]))
+    my_colors <- khroma::colour(sequential_palette)
     my.colors <- colorRampPalette(my_colors(6))
 
-    rf_colors <- colour(diverging_palette)
+    diverging_palettes <- c("BuRd", "PRGn", "sunset")
+    if(!is.element(diverging_palette, diverging_palettes))
+        stop(sprintf("Diverging palette %s is not one of %s, %s, or %s",
+                     diverging_palette,
+                     diverging_palettes[1],
+                     diverging_palettes[2],
+                     diverging_palettes[3]))
+    rf_colors <- khroma::colour(diverging_palette)
     rf.colors <- colorRampPalette(rev(rf_colors(5)))
 
 #### Read in shapefiles ####
     ## Read in shapefile after testing whether or not it can be read
-    if(verbose == TRUE) message("Reading shape files")
+    if(verbose == TRUE) message("Attempting to read shape files")
+
     if (file.exists(shape_file)) {
         if(verbose == TRUE) message(sprintf("Reading %s", shape_file))
         in_shape <- readOGR(dsn = shape_file, layer = layer_name) }
@@ -146,7 +120,7 @@ dryland_ag <- function(root_dir,
         stop(sprintf("Unable to read %s", shape_file))
 
     ## Get the polygon names from the shape file
-    polygon_names <- read_sf(shape_file, layer_name)[[name_column]]
+    polygon_names <- sf::read_sf(shape_file, layer_name)[[name_column]]
 
     ## Set up different projections/datums since rasters are different CRS
     HI3dry <- spTransform(in_shape, CRS = crs_1)
@@ -373,19 +347,18 @@ dryland_ag <- function(root_dir,
     for (i in 1:length(allcropped))
         allmasked[[i]] <- switch(names(allcropped)[i],
                                  dem = mask(allcropped[[i]],
-                                            HI3dry.crop10,
-                                            maskvalue=T),
+                                                    HI3dry.crop10,
+                                                    maskvalue = T),
                                  tmax =, tmin = mask(allcropped[[i]],
-                                                   HI3dry.crop250temp,
-                                                   maskvalue=T),
+                                                             HI3dry.crop250temp,
+                                                             maskvalue = T),
                                  mask(allcropped[[i]],
-                                      HI3dry.crop250,
-                                      maskvalue=T))
+                                              HI3dry.crop250,
+                                              maskvalue=T))
 
     names(allmasked) <- names(allcropped)
 
 #### Aids to data visualization ####
-
 
     ## Crop the ahupuaa shapefile for plotting
     ahucrop <- crop(ahupuaa, ext.HI3dry)
@@ -441,23 +414,19 @@ dryland_ag <- function(root_dir,
         for (i in 1:length(allmasked)) {
             if(nlayers(allmasked[[i]]) == 1)
                 writeRaster(allmasked[[i]],
-                            filename = file.path(geo_tiff_dir,
-                                                 names(allmasked)[i]),
-                            format = "GTiff",
-                            overwrite = T)
+                                    filename = file.path(geo_tiff_dir,
+                                                         names(allmasked)[i]),
+                                    format = "GTiff",
+                                    overwrite = T)
             else
                 writeRaster(allmasked[[i]],
-                            filename = file.path(geo_tiff_dir,
-                                                 paste0(names(allmasked)[i],
-                                                        "stack.tif")),
-                            format = "GTiff",
-                            bylayer = F,
-                        overwrite = T) }
+                                    filename = file.path(geo_tiff_dir,
+                                                         paste0(names(allmasked)[i],
+                                                                "stack.tif")),
+                                    format = "GTiff",
+                                    bylayer = F,
+                                    overwrite = T) }
     }
-
-###### VISUALIZE STATISTICS
-
-    if(verbose == TRUE) message("Compiling spatial statistics")
 
     ## CRS for most of the raster layers
     hi3_dry_crs <- proj4string(HI3dry)
@@ -493,387 +462,14 @@ dryland_ag <- function(root_dir,
                 monthly = mo,
                 separate = sep)
 
-    ## Plot annual metrics across areas of interest
-    if (plot_annual_summary == TRUE) {
-
-        out_file <- filename_splice(output_dir, annual_summary_file, "_1")
-        if(verbose == TRUE)
-            message(sprintf("Writing annual metrics to %s", out_file))
-
-        comb_dfs <- NULL
-        for (i in 1:length(res$annual)) {
-
-            ## Convert selected rasters, one for each area, into a list of data frames
-            dfs <- lapply(X = res$rasters, FUN = function(x) as.data.frame(x[[i]]))
-
-            ## add columns used for plotting and remove rows with NA data values
-            ## polygon_name distinguishes areas in each of the plots
-            ## plot_title distinguishes plots from one another
-            for(j in 1:length(dfs)) {
-                dfs[[j]]$polygon_name <- res$polygon_names[j]
-                dfs[[j]]$plot_title <- names(res$rasters[[1]])[i]
-                colnames(dfs[[j]])[1] <- "value"
-                dfs[[j]] <- dfs[[j]][!is.na(dfs[[j]]$value), ]}
-
-            comb_dfs <- dplyr::bind_rows(comb_dfs, dfs)}
-
-        ## Possibly order the legend labels
-        if(!is.null(legend_order))
-            comb_dfs$polygon_name <- factor(comb_dfs$polygon_name,
-                                            levels = legend_order)
-
-        comparative_graph(data = comb_dfs, palette = qualitative_palette,
-                          out_file = out_file, height = annual_plot_height[1])
-
-        ## wind metrics
-        out_file <- filename_splice(output_dir, annual_summary_file, "_2")
-        if(verbose == TRUE)
-            message(sprintf("Writing annual wind metrics to %s", out_file))
-
-        comb_dfs <- NULL
-        for(i in 1:nlayers(res$rasters[[1]][[res$separate[1]]])) {
-            dfs <- lapply(X = res$rasters,
-                          FUN = function(x)
-                              as.data.frame(raster(x[[res$separate[[1]]]],
-                                                   layer = i)))
-
-            ## add columns used for plotting and remove rows with NA data values
-            ## polygon_name distinguishes areas in each of the plots
-            ## plot_title distinguishes plots from one another
-            for(j in 1:length(dfs)) {
-                dfs[[j]]$polygon_name <- res$polygon_names[j]
-                dfs[[j]]$plot_title <- names(res$rasters[[1]][[res$separate[[1]]]])[i]
-                colnames(dfs[[j]])[1] <- "value"
-                dfs[[j]] <- dfs[[j]][!is.na(dfs[[j]]$value), ]}
-
-            comb_dfs <- dplyr::bind_rows(comb_dfs, dfs)}
-
-        ## Possibly order the legend labels
-        if(!is.null(legend_order))
-            comb_dfs$polygon_name <- factor(comb_dfs$polygon_name,
-                                            levels = legend_order)
-
-        comparative_graph(data = comb_dfs, palette = qualitative_palette,
-                          out_file = out_file, height = annual_plot_height[2])
-
-        ## intra-annual rainfall metrics
-
-        comb_dfs <- NULL
-        out_file <- filename_splice(output_dir, annual_summary_file, "_3")
-        if(verbose == TRUE)
-            message(sprintf("Writing intra-annual rainfall metrics to %s",
-                            out_file))
-
-        for (i in 1:length(res$rasters)) {
-            dfs <- lapply(X = res$rasters,
-                          FUN = function(x) as.data.frame(x$rf.ann))
-
-            ## add columns used for plotting and remove rows with NA data values
-            ## polygon_name distinguishes areas in each of the plots
-            ## plot_title distinguishes plots from one another
-            for(j in 1:length(dfs)) {
-                dfs[[j]]$polygon_name <- res$polygon_names[j]
-                dfs[[j]]$plot_title <- names(res$rasters[[1]]$rf.ann)
-                colnames(dfs[[j]])[1] <- "value"
-                dfs[[j]] <- dfs[[j]][!is.na(dfs[[j]]$value), ]}
-
-            comb_dfs <- dplyr::bind_rows(comb_dfs, dfs)}
-
-        for(i in 1:nlayers(res$rasters[[1]][[res$separate[2]]])) {
-            dfs <- lapply(X = res$rasters,
-                          FUN = function(x)
-                              as.data.frame(raster(x[[res$separate[[2]]]],
-                                                   layer = i)))
-
-            ## add columns used for plotting and remove rows with NA data values
-            ## polygon_name distinguishes areas in each of the plots
-            ## plot_title distinguishes plots from one another
-            for(j in 1:length(dfs)) {
-                dfs[[j]]$polygon_name <- res$polygon_names[j]
-                dfs[[j]]$plot_title <- names(res$rasters[[1]][[res$separate[[2]]]])[i]
-                colnames(dfs[[j]])[1] <- "value"
-                dfs[[j]] <- dfs[[j]][!is.na(dfs[[j]]$value), ]}
-
-            comb_dfs <- dplyr::bind_rows(comb_dfs, dfs)}
-
-        ## Possibly order the legend labels
-        if(!is.null(legend_order))
-            comb_dfs$polygon_name <- factor(comb_dfs$polygon_name,
-                                            levels = legend_order)
-
-        comparative_graph(data = comb_dfs, palette = qualitative_palette,
-                          out_file = out_file, height = annual_plot_height[3])}
-
-    ## Monthly metrics
-
-    ## set up
-    min_plot_size = 7/3
-    monthly_plot_height = 15 * min_plot_size
-    monthly_plot_width = length(res$rasters) * min_plot_size * 1.5
-
-    out_file <- file.path(output_dir, monthly_summary_file)
-    if(verbose == TRUE) message(sprintf("Writing monthly metrics to %s",
-                                        out_file))
-
-    comb_dfs <- NULL
-    ## make data frame
-    for (i in res$monthly) {
-
-        ## Convert selected rasters, one for each area,
-        ## into a list of data frames
-        dfs <- lapply(X = res$rasters, FUN = function(x)
-            as.data.frame(x[[i]]))
-
-        ## add columns used for plotting and remove rows with NA data values
-        ## polygon_name distinguishes areas in each of the plots
-        ## facet distinguishes plots from one another
-        for(j in 1:length(dfs)) {
-            names(dfs[[j]]) <- month.abb
-            dfs[[j]]$polygon_name <- res$polygon_names[j]
-            dfs[[j]]$facet <- names(res$rasters[[1]])[i]
-            dfs[[j]] <- suppressMessages(reshape2::melt(dfs[[j]],
-                                                        na.rm = TRUE))
-        }
-
-        comb_dfs <- dplyr::bind_rows(comb_dfs, dfs)}
-
-    ## Possibly order the legend labels
-    if(!is.null(legend_order))
-        comb_dfs$polygon_name <- factor(comb_dfs$polygon_name,
-                                        levels = legend_order)
-
-    ## boxplots
-    p <- ggplot(data = comb_dfs, aes(x = variable, y = value,
-                                     fill = polygon_name,
-                                     color = polygon_name))
-    p <- p + geom_boxplot(outlier.shape = 20, alpha = 0.4)
-    p <- p + labs(x = "Month", y = NULL, fill = "Place")
-    p <- p + theme_bw()
-    p <- p + guides(color = FALSE)
-    p <- p + switch(qualitative_palette,
-                    "contrast" = scale_color_contrast(),
-                    "bright" = scale_colour_bright(),
-                    "vibrant" = scale_colour_vibrant(),
-                    "muted" = scale_colour_muted())
-    p <- p + switch(qualitative_palette,
-                    "contrast" = scale_fill_contrast(),
-                    "bright" = scale_fill_bright(),
-                    "vibrant" = scale_fill_vibrant(),
-                    "muted" = scale_fill_muted())
-    p <- p + facet_grid(facet ~ ., scales = "free_y")
-    ggsave(filename = out_file, plot = p, height = monthly_plot_height,
-           width = monthly_plot_width)
-
-    if (save_results_file == TRUE) {
+    if (!is.null(results_file)) {
+        out_file <- file.path(output_dir, results_file)
         if(verbose == TRUE) {
-            out_file <- file.path(output_dir, results_file)
-            fmt <- "Writing results to %s.\nUse the function readRDS(file = \"%s\") to read them.\n"
+            fmt <- "Writing results to %s\nUse the function readRDS(file = \"%s\") to read them"
             message(sprintf(fmt = fmt, out_file, out_file))}
         saveRDS(object = res, file = out_file)}
 
-    res } # end of function
+    if(verbose == TRUE) message("Pau")
 
-## #########################################################################################
-## ################## Make pretty figures for publication ##################################
-## ## FIGURE 2: Density plots of mean annual climate ---------
-## pdf("Fig2_MeanAnnual_v3.pdf", width=9, height=5)
-## ann.fin<-c(1, 13,
-##            2, 9,
-##            3, 4,
-##            NA, 6)
-
-## names.ann.fin<-c("Elevation (m)",
-##                   expression("Mean Air Temperature " (degree*C)),
-##                   "Annual Rainfall (mm)",
-##                   "Relative Humidity (%)",
-##                   "Cloud Frequency",
-##                   expression("Shortwave Radiation " (Wm^-2)),
-##                   expression("Mean Wind Speed " (ms^-1)),
-##                   "Potential ET (mm)")
-## figlabel<-letters[1:8]
-
-## par(mfcol=c(2,4), mar=c(4.5, 4, 1, 0.6) + 0.1)
-## for (i in 1:length(ann.fin)){
-##   if(i==7){
-##     d.koh<-density(raster(all.kohala[[sep[1]]], layer=1), plot=F)
-##     d.kon<-density(raster(all.kona[[sep[1]]], layer=1), plot=F)
-##     d.kau<-density(raster(all.kau[[sep[1]]], layer=1), plot=F)
-##     ylim<-range(d.koh$y, d.kon$y, d.kau$y)
-##     xlim<-range(d.koh$x, d.kon$x, d.kau$x)
-
-##     plot(d.koh, xlim=xlim, ylim=ylim, col="#000000", lty=1,
-##          xlab=names.ann.fin[i], main="", ylab="", cex.axis=0.9)
-##     lines(d.kon, col="#0072B2", lty=2, lwd=1.5)
-##     lines(d.kau, col="#E69F00", lty=3, lwd=3)
-##     mtext(figlabel[i], side=3, line=-1.3, adj=0.04)
-##   }else{
-##   d.koh<-density(all.kohala[[ann.fin[i]]], plot=F)
-##   d.kon<-density(all.kona[[ann.fin[i]]], plot=F)
-##   d.kau<-density(all.kau[[ann.fin[i]]], plot=F)
-##   ylim<-range(d.koh$y, d.kon$y, d.kau$y)
-##   xlim<-range(d.koh$x, d.kon$x, d.kau$x)
-
-##   plot(d.koh, xlim=xlim, ylim=ylim, col="#000000", lty=1,
-##        xlab=names.ann.fin[i], main="", ylab="", cex.axis=0.9)
-##   lines(d.kon, col="#0072B2", lty=2, lwd=1.5)
-##   lines(d.kau, col="#E69F00", lty=3, lwd=3)
-##   mtext(figlabel[i], side=3, line=-1.3, adj=0.04)
-##   if(i==1){
-##     legend("topright", legend=c("Kohala", "Kona", "Kau"),
-##            lty=c(1,2,3), lwd=c(1,1.5,2), bty="n",
-##            col=c("#000000","#0072B2","#E69F00"))
-##     mtext("Density", side=2, line=2.5, cex=0.7)}
-##   if(i==2){mtext("Density", side=2, line=2.5, cex=0.7)}
-##   }
-## }
-## dev.off()
-
-## ## FIGURE 3: Boxplots of seasonality: P, PET, and aridity (PET/P) ----------
-## pdf("Fig3_AnnualCycle_P_PET_Aridity_fin2.pdf", width=6, height=5)
-## fig3<-mo[names(mo) %in% c("rf.mo", "pet", "aridity.mo")]
-## names(all.kohala[["aridity.mo"]])<-month.abb
-## names(all.kona[["aridity.mo"]])<-month.abb
-## names(all.kau[["aridity.mo"]])<-month.abb
-## figlabel<-letters[1:9]
-## par(mfrow=c(3,3), mar=c(0.2, 0, 0, 0), oma=c(3,5,3,2))
-## for (i in fig3){
-##   ylim<-range(minValue(all.kohala[[i]]),
-##               minValue(all.kona[[i]]),
-##               minValue(all.kau[[i]]),
-##               maxValue(all.kohala[[i]]),
-##               maxValue(all.kona[[i]]),
-##               maxValue(all.kau[[i]]))
-##   if (i==fig3[1]){
-##     boxplot(all.kohala[[i]], ylim=ylim,
-##             border="#000000", notch=T,
-##             xaxt="n", las=1)
-##     mtext("Kohala", side=3, line=1)
-##     mtext("Rainfall (P, mm)", side=2, line=3.2, cex=0.8)
-##     mtext("a", side=3, line=-1.3, adj=0.04)
-##     boxplot(all.kona[[i]], ylim=ylim,
-##             border="#0072B2", notch=T,
-##             xaxt="n", yaxt="n")
-##     mtext("Kona", side=3, line=1)
-##     mtext("b", side=3, line=-1.3, adj=0.04)
-##     boxplot(all.kau[[i]], ylim=ylim,
-##             border="#E69F00", notch=T,
-##             xaxt="n", yaxt="n")
-##     mtext("Kau", side=3, line=1)
-##     mtext("c", side=3, line=-1.3, adj=0.04)
-##   }else if(i==fig3[2]){
-##     boxplot(all.kohala[[i]], ylim=ylim,
-##             border="#000000", notch=T,
-##             xaxt="n", las=1)
-##     mtext("PET (mm)", side=2, line=3.2, cex=0.8)
-##     mtext("d", side=3, line=-1.3, adj=0.04)
-##     boxplot(all.kona[[i]], ylim=ylim,
-##             border="#0072B2", notch=T,
-##             xaxt="n", yaxt="n")
-##     mtext("e", side=3, line=-1.3, adj=0.04)
-##     boxplot(all.kau[[i]], ylim=ylim,
-##             border="#E69F00", notch=T,
-##             xaxt="n", yaxt="n")
-##     mtext("f", side=3, line=-1.3, adj=0.04)
-##   }else{
-##     boxplot(all.kohala[[i]], ylim=ylim,
-##             border="#000000", notch=T,
-##             cex.axis=0.9, las=1)
-##     mtext("Aridity (PET/P)", side=2, line=3.2, cex=0.8)
-##     mtext("g", side=3, line=-1.3, adj=0.04)
-##     boxplot(all.kona[[i]], ylim=ylim,
-##             border="#0072B2", notch=T,
-##             cex.axis=0.9, yaxt="n", las=1)
-##     mtext("h", side=3, line=-1.3, adj=0.04)
-##     boxplot(all.kau[[i]], ylim=ylim,
-##             border="#E69F00", notch=T,
-##             cex.axis=0.9, yaxt="n", las=1)
-##     mtext("i", side=3, line=-1.3, adj=0.04)
-##   }
-##   print(i)
-## }
-## dev.off()
-
-## ## FIGURE S2: Boxplots of seasonality: Tmax, Tmin, RH, and VPD ----------------
-## pdf("FigS2_AnnualCycle_T_RH_VPD_fin.pdf", width=6, height=5)
-## figs2<-mo[names(mo) %in% c("tmax", "tmin", "rh", "vpd")]
-## figs2<-figs2[c(3,1,2)]
-
-## names(all.kohala[[figs2[3]]])<-month.abb
-## names(all.kona[[figs2[3]]])<-month.abb
-## names(all.kau[[figs2[3]]])<-month.abb
-
-## figlabel<-letters[1:9]
-## par(mfrow=c(3,3), mar=c(0.2, 0, 0, 0), oma=c(3,5,3,2))
-## for (i in figs2){   # temperature
-##   if (i==figs2[1]){
-##     ylim<-range(minValue(all.kohala[[i+1]]),
-##                 minValue(all.kona[[i+1]]),
-##                 minValue(all.kau[[i+1]]),
-##                 maxValue(all.kohala[[i]]),
-##                 maxValue(all.kona[[i]]),
-##                 maxValue(all.kau[[i]]))
-##     boxplot(all.kohala[[i]], ylim=ylim,
-##             border="#000000", notch=T,
-##             xaxt="n", las=1)
-##     boxplot(all.kohala[[i+1]], ylim=ylim,
-##             border="#000000", notch=T,
-##             xaxt="n", las=1, add=T)
-##     mtext("Kohala", side=3, line=1)
-##     mtext(expression(paste(T[min], " and ", T[max], " ", (degree*C)), sep=""), side=2, line=3.2, cex=0.8)
-##     mtext("a", side=3, line=-1.3, adj=0.04)
-##     boxplot(all.kona[[i]], ylim=ylim,
-##             border="#0072B2", notch=T,
-##             xaxt="n", yaxt="n")
-##     boxplot(all.kona[[i+1]], ylim=ylim,
-##             border="#0072B2", notch=T,
-##             xaxt="n", yaxt="n", add=T)
-##     mtext("Kona", side=3, line=1)
-##     mtext("b", side=3, line=-1.3, adj=0.04)
-##     boxplot(all.kau[[i]], ylim=ylim,
-##             border="#E69F00", notch=T,
-##             xaxt="n", yaxt="n")
-##     boxplot(all.kau[[i+1]], ylim=ylim,
-##             border="#E69F00", notch=T,
-##             xaxt="n", yaxt="n", add=T)
-##     mtext("Kau", side=3, line=1)
-##     mtext("c", side=3, line=-1.3, adj=0.04)
-##   }else{
-##     ylim<-range(minValue(all.kohala[[i]]),
-##                 minValue(all.kona[[i]]),
-##                 minValue(all.kau[[i]]),
-##                 maxValue(all.kohala[[i]]),
-##                 maxValue(all.kona[[i]]),
-##                 maxValue(all.kau[[i]]))
-##     if(i==figs2[2]){
-##       boxplot(all.kohala[[i]], ylim=ylim,
-##               border="#000000", notch=T,
-##               xaxt="n", las=1)
-##       mtext("RH (%)", side=2, line=3.2, cex=0.8)
-##       mtext("d", side=3, line=-1.3, adj=0.04)
-##       boxplot(all.kona[[i]], ylim=ylim,
-##               border="#0072B2", notch=T,
-##               xaxt="n", yaxt="n")
-##       mtext("e", side=3, line=-1.3, adj=0.04)
-##       boxplot(all.kau[[i]], ylim=ylim,
-##               border="#E69F00", notch=T,
-##               xaxt="n", yaxt="n")
-##       mtext("f", side=3, line=-1.3, adj=0.04)
-##     }else{
-##       boxplot(all.kohala[[i]], ylim=ylim,
-##               border="#000000", notch=T,
-##               cex.axis=0.9, las=1)
-##       mtext("VPD (Pa)", side=2, line=3.2, cex=0.8)
-##       mtext("g", side=3, line=-1.3, adj=0.04)
-##       boxplot(all.kona[[i]], ylim=ylim,
-##               border="#0072B2", notch=T,
-##               cex.axis=0.9, yaxt="n", las=1)
-##       mtext("h", side=3, line=-1.3, adj=0.04)
-##       boxplot(all.kau[[i]], ylim=ylim,
-##               border="#E69F00", notch=T,
-##               cex.axis=0.9, yaxt="n", las=1)
-##       mtext("i", side=3, line=-1.3, adj=0.04)
-##     }
-##   }
-##   print(i)
-## }
-## dev.off()
+    res
+} # end of function
