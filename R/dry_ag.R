@@ -19,6 +19,7 @@ dryland_ag <- function(root_dir,
                        shape_file,
                        layer_name,
                        name_column,
+                       sort_column = NULL,
                        ahupuaa_shape_file,
                        output_dir = root_dir,
                        raster_visualization_file = "raster_visualization_file.pdf",
@@ -119,8 +120,13 @@ dryland_ag <- function(root_dir,
     else
         stop(sprintf("Unable to read %s", shape_file))
 
-    ## Get the polygon names from the shape file
+    ## Get the polygon names and sort order from the shape file
     polygon_names <- sf::read_sf(shape_file, layer_name)[[name_column]]
+
+    if(!is.null(sort_column))
+        sort_order <- sf::read_sf(shape_file, layer_name)[[sort_column]]
+    else
+        sort_order <- NULL
 
     ## Set up different projections/datums since rasters are different CRS
     HI3dry <- spTransform(in_shape, CRS = crs_1)
@@ -397,7 +403,7 @@ dryland_ag <- function(root_dir,
             else
                                         # DO fix colors for these stacks
                 for (j in 1:nlayers(allmasked[[i]])) {
-                    plot(ahucrop,main = names(allmasked[[i]][[j]]),
+                    plot(ahucrop, main = names(allmasked[[i]][[j]]),
                          lwd = 0.5)
                     plot(allmasked[[i]][[j]], breaks = fixbreaks,
                          col = rf.colors(15),
@@ -456,6 +462,7 @@ dryland_ag <- function(root_dir,
     ## Return value
     res <- list(polygons = polygons,
                 polygon_names = polygon_names,
+                sort_order = sort_order,
                 rasters = rasters,
                 crs = hi3_dry_crs,
                 annual = ann,
