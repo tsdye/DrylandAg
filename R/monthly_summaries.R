@@ -4,12 +4,16 @@ plot_monthly_summaries <- function(data = NULL,
                                    monthly_summary_file = "monthly_summary_file.pdf",
                                    order_legend = FALSE,
                                    palette = "bright",
+                                   default_palette = "viridis",
                                    png_dpi = 120,
                                    verbose = TRUE) {
 
     library(ggplot2)
 
     ## set up
+    palettes <- c("bright", "contrast", "vibrant", "muted")
+    default_palettes <- c("viridis", "plasma", "inferno")
+
     if(is.null(data) & is.null(input_file_name))
         stop("One of 'data' and 'input_file_name' required")
 
@@ -23,6 +27,12 @@ plot_monthly_summaries <- function(data = NULL,
     if(!is.null(input_file_name))
         data <- readRDS(file = input_file_name)
 
+    if(!is.element(palette, palettes))
+        stop(sprintf("Palette '%s' is not recognized", palette))
+
+    if(!is.element(default_palette, default_palettes))
+        stop(sprintf("Default palette '%s' is not recognized", default_palette))
+
     max_colors <- c(bright = 7, contrast = 3, vibrant = 7, muted = 9)
 
     if(length(data$rasters) > max_colors[palette])
@@ -31,8 +41,8 @@ plot_monthly_summaries <- function(data = NULL,
         use_grey <- FALSE
 
     if (use_grey == TRUE)
-        message(sprintf("Requested %i colors but %s palette offers %i. Using default palette.",
-                        length(data$rasters), palette, max_colors[palette]))
+        message(sprintf("Requested %i colors but '%s' palette offers %i. Using default palette, '%s'.",
+                        length(data$rasters), palette, max_colors[palette], default_palette))
     else
         message(sprintf("Preparing color output using the %s palette", palette))
 
@@ -107,7 +117,7 @@ plot_monthly_summaries <- function(data = NULL,
                         "vibrant" = khroma::scale_fill_vibrant(),
                         "muted" = khroma::scale_fill_muted()) }
     else {
-           ## p <- p + khroma::scale_fill_sunset()
+           p <- p + scale_fill_viridis_d(option = default_palette)
            p <- p + guides(fill = guide_legend(nrow = 2))}
 
     p <- p + geom_boxplot(outlier.shape = 20, alpha = 0.4)
