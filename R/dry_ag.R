@@ -343,16 +343,16 @@ dryland_ag <- function(root_dir,
     if(verbose == TRUE) message("Zooming in to areas of interest")
 
     allcropped <- lapply(allstacks,
-                         FUN= function(x) crop(x, area_of_interest))
+                         FUN = function(x, y = area_of_interest) crop(x, y))
 
     ## Create MASKS so we focus on field systems
     ## Note DEM, Temp layers, and 250m ET atlas layers have diff CRS, resolutions!
                                         # DEM mask, note 10m resolution
-    in_shape_crs_1.crop10<-is.na(mask(allcropped$dem, in_shape_crs_1))
+    in_shape_crs_1.crop10 <- is.na(mask(allcropped$dem, in_shape_crs_1))
                                         # All others: 250m, +ellps=WGS84
-    in_shape_crs_1.crop250<-is.na(mask(allcropped$rf.ann, in_shape_crs_1))
+    in_shape_crs_1.crop250 <- is.na(mask(allcropped$rf.ann, in_shape_crs_1))
                                         # Temp layer mask, +ellps=GRS80
-    in_shape_crs_1.crop250temp<-is.na(mask(allcropped$tmax, in_shape_crs_2))
+    in_shape_crs_1.crop250temp <- is.na(mask(allcropped$tmax, in_shape_crs_2))
 
     ## Create a list of masked rasters
     allmasked<-list()
@@ -369,9 +369,6 @@ dryland_ag <- function(root_dir,
                                               maskvalue=T))
 
     names(allmasked) <- names(allcropped)
-
-#### Aids to data visualization ####
-
 
 #### Plot rasters to compare areas ####
     if(plot_area_comparison == TRUE) {
