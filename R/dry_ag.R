@@ -21,6 +21,7 @@ dryland_ag <- function(root_dir,
                        name_column,
                        sort_column = NULL,
                        ahupuaa_shape_file,
+                       ahupuaa_layer = "ahupuaa"
                        output_dir = root_dir,
                        raster_visualization_file = "raster_visualization_file.pdf",
                        plot_raster_visualization = TRUE,
@@ -129,17 +130,23 @@ dryland_ag <- function(root_dir,
         sort_order <- NULL
 
     ## Set up different projections/datums since rasters are different CRS
-    HI3dry <- spTransform(in_shape, CRS = crs_1)
+    ## First CROP all rasters to the area of interest to speed up processing
+    area_of_interest <- extent(interest_area)
 
-    HI3dry.temp <- spTransform(in_shape, CRS = crs_2)
+    in_shape_crs_1 <- spTransform(in_shape, CRS = crs_1)
+
+    in_shape_crs_2 <- spTransform(in_shape, CRS = crs_2)
 
     ## Read in ahupuaa shapefile for mapping later
     if (file.exists(ahupuaa_shape_file)) {
         if(verbose == TRUE) message(sprintf("Reading %s", ahupuaa_shape_file))
-        ahupuaa <- readOGR(dsn=ahupuaa_shape_file, layer="ahupuaa")
+        ahupuaa <- readOGR(dsn = ahupuaa_shape_file, layer = ahupuaa_layer)
         ahupuaa <- spTransform(ahupuaa, CRS = crs_3) }
     else
         stop(sprintf("Unable to read %s", ahupuaa_shape_file))
+
+    ## Crop the ahupuaa shapefile for plotting
+    ahucrop <- crop(ahupuaa, area_of_interest)
 
 ### Read in raster data ####
 ### Get file names
@@ -335,39 +342,36 @@ dryland_ag <- function(root_dir,
     ## Clip - use extent(), crop(), and mask()
     if(verbose == TRUE) message("Zooming in to areas of interest")
 
-    ## First CROP all rasters to the area of interest to speed up processing
-    ext.HI3dry <- extent(interest_area)
-    allcropped <- lapply(allstacks, FUN= function(x) crop(x, ext.HI3dry))
+    allcropped <- lapply(allstacks,
+                         FUN= function(x) crop(x, area_of_interest))
 
     ## Create MASKS so we focus on field systems
     ## Note DEM, Temp layers, and 250m ET atlas layers have diff CRS, resolutions!
                                         # DEM mask, note 10m resolution
-    HI3dry.crop10<-is.na(mask(allcropped$dem, HI3dry))
+    in_shape_crs_1.crop10<-is.na(mask(allcropped$dem, in_shape_crs_1))
                                         # All others: 250m, +ellps=WGS84
-    HI3dry.crop250<-is.na(mask(allcropped$rf.ann, HI3dry))
+    in_shape_crs_1.crop250<-is.na(mask(allcropped$rf.ann, in_shape_crs_1))
                                         # Temp layer mask, +ellps=GRS80
-    HI3dry.crop250temp<-is.na(mask(allcropped$tmax, HI3dry.temp))
+    in_shape_crs_1.crop250temp<-is.na(mask(allcropped$tmax, in_shape_crs_2))
 
     ## Create a list of masked rasters
     allmasked<-list()
     for (i in 1:length(allcropped))
         allmasked[[i]] <- switch(names(allcropped)[i],
                                  dem = mask(allcropped[[i]],
-                                                    HI3dry.crop10,
+                                                    in_shape_crs_1.crop10,
                                                     maskvalue = T),
                                  tmax =, tmin = mask(allcropped[[i]],
-                                                             HI3dry.crop250temp,
+                                                             in_shape_crs_1.crop250temp,
                                                              maskvalue = T),
                                  mask(allcropped[[i]],
-                                              HI3dry.crop250,
+                                              in_shape_crs_1.crop250,
                                               maskvalue=T))
 
     names(allmasked) <- names(allcropped)
 
 #### Aids to data visualization ####
 
-    ## Crop the ahupuaa shapefile for plotting
-    ahucrop <- crop(ahupuaa, ext.HI3dry)
 
 #### Plot rasters to compare areas ####
     if(plot_area_comparison == TRUE) {
@@ -434,15 +438,15 @@ dryland_ag <- function(root_dir,
                                     overwrite = T) }
     }
 
-    ## CRS for most of the raster layers
-    hi3_dry_crs <- proj4string(HI3dry)
+    ## ## CRS for most of the raster layers
+    ## crs_1 <- proj4string(in_shape_crs_1)
 
     ## make a list of SpatialPolygons
-    polygons <- lapply(X = HI3dry@polygons,
+    polygons <- lapply(X = in_shape_crs_1@polygons,
                        FUN = function(x, y)
                            SpatialPolygons(list(test = x),
                                            proj4string = CRS(y)),
-                       y = hi3_dry_crs)
+                       y = crs_1)
 
     ## Crop each raster using each of the polygons
     rasters <- lapply(X = polygons,
@@ -464,7 +468,7 @@ dryland_ag <- function(root_dir,
                 polygon_names = polygon_names,
                 sort_order = sort_order,
                 rasters = rasters,
-                crs = hi3_dry_crs,
+                crs = crs_1,
                 annual = ann,
                 monthly = mo,
                 separate = sep)
