@@ -21,7 +21,7 @@ dryland_ag <- function(root_dir,
                        name_column,
                        sort_column = NULL,
                        ahupuaa_shape_file,
-                       ahupuaa_layer = "ahupuaa"
+                       ahupuaa_layer = "ahupuaa",
                        output_dir = root_dir,
                        raster_visualization_file = "raster_visualization_file.pdf",
                        plot_raster_visualization = TRUE,
