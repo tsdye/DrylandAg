@@ -36,11 +36,11 @@ plot_monthly_summaries <- function(data = NULL,
     max_colors <- c(bright = 7, contrast = 3, vibrant = 7, muted = 9)
 
     if(length(data$rasters) > max_colors[palette])
-        use_grey <- TRUE
+        use_default_palette <- TRUE
     else
-        use_grey <- FALSE
+        use_default_palette <- FALSE
 
-    if (use_grey == TRUE)
+    if (use_default_palette == TRUE)
         message(sprintf("Requested %i colors but '%s' palette offers %i. Using default palette, '%s'.",
                         length(data$rasters), palette, max_colors[palette], default_palette))
     else
@@ -92,7 +92,7 @@ plot_monthly_summaries <- function(data = NULL,
                                         out_file))
 
     ## color boxplots
-    if(use_grey == FALSE)
+    if(use_default_palette == FALSE)
         p <- ggplot(data = comb_dfs, aes(x = variable, y = value,
                                          fill = polygon_name,
                                          color = polygon_name))
@@ -104,7 +104,7 @@ plot_monthly_summaries <- function(data = NULL,
     p <- p + theme(legend.position="bottom")
     p <- p + labs(x = "Month", y = NULL, fill = "Place")
 
-    if(use_grey == FALSE) {
+    if(use_default_palette == FALSE) {
         p <- p + guides(color = FALSE)
         p <- p + switch(palette,
                         "contrast" = khroma::scale_color_contrast(),
