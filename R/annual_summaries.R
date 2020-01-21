@@ -36,11 +36,11 @@ plot_annual_summaries <- function(data = NULL,
     max_colors <- c(bright = 7, contrast = 3, vibrant = 7, muted = 9)
 
     if(length(data$rasters) > max_colors[palette])
-        use_grey <- TRUE
+        use_default_palette <- TRUE
     else
-        use_grey <- FALSE
+        use_default_palette <- FALSE
 
-    if (use_grey == TRUE)
+    if (use_default_palette == TRUE)
         message(sprintf("Requested %i colors but '%s' palette offers %i. Using default palette, '%s'.",
                         length(data$rasters), palette, max_colors[palette], default_palette))
     else
@@ -66,7 +66,7 @@ plot_annual_summaries <- function(data = NULL,
     comparative_graph <- function(data, out_file, palette,
                                   default_palette,
                                   height = 7, width = 7) {
-        if(use_grey == TRUE) {
+        if(use_default_palette == TRUE) {
             p <- ggplot(data = data, aes(x = polygon_name, y = value, fill = polygon_name))
             p <- p + geom_boxplot(outlier.shape = 20)
             p <- p + scale_fill_viridis_d(option = default_palette)
@@ -93,7 +93,7 @@ plot_annual_summaries <- function(data = NULL,
         p <- p + theme_bw()
         p <- p + theme(legend.position="bottom")
 
-        if(use_grey == TRUE) {
+        if(use_default_palette == TRUE) {
             p <- p + theme(axis.ticks.x = element_blank(),
                            axis.text.x = element_blank())
             p <- p + theme(panel.grid.minor.x=element_blank(),
@@ -129,12 +129,12 @@ plot_annual_summaries <- function(data = NULL,
     ## Plot annual metrics across areas of interest
 
     out_file <- filename_splice(output_dir, annual_summary_file, "_1")
-    out_height <- if(use_grey == TRUE)
+    out_height <- if(use_default_palette == TRUE)
                       min_plot_size * 4
                   else
                       color_plot_height[1]
 
-    out_width <- if(use_grey == TRUE)
+    out_width <- if(use_default_palette == TRUE)
                      min_plot_size * 5
                  else
                      7
@@ -183,12 +183,12 @@ plot_annual_summaries <- function(data = NULL,
 
     ## wind metrics
     out_file <- filename_splice(output_dir, annual_summary_file, "_2")
-    out_height <- if(use_grey == TRUE)
+    out_height <- if(use_default_palette == TRUE)
                       7
                   else
                       color_plot_height[2]
 
-    out_width <- if(use_grey == TRUE)
+    out_width <- if(use_default_palette == TRUE)
                      min_plot_size * 3
                  else
                      7
@@ -240,11 +240,11 @@ plot_annual_summaries <- function(data = NULL,
 
     comb_dfs <- NULL
     out_file <- filename_splice(output_dir, annual_summary_file, "_3")
-    out_height <- if(use_grey == TRUE)
+    out_height <- if(use_default_palette == TRUE)
                       7
                   else
                       color_plot_height[3]
-    out_width <- if(use_grey == TRUE)
+    out_width <- if(use_default_palette == TRUE)
                      min_plot_size * 4
                  else
                      7
