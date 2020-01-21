@@ -421,18 +421,18 @@ dryland_ag <- function(root_dir,
         for (i in 1:length(allmasked)) {
             if(nlayers(allmasked[[i]]) == 1)
                 writeRaster(allmasked[[i]],
-                                    filename = file.path(geo_tiff_dir,
-                                                         names(allmasked)[i]),
-                                    format = "GTiff",
-                                    overwrite = T)
+                            filename = file.path(geo_tiff_dir,
+                                                 names(allmasked)[i]),
+                            format = "GTiff",
+                            overwrite = T)
             else
                 writeRaster(allmasked[[i]],
-                                    filename = file.path(geo_tiff_dir,
-                                                         paste0(names(allmasked)[i],
-                                                                "stack.tif")),
-                                    format = "GTiff",
-                                    bylayer = F,
-                                    overwrite = T) }
+                            filename = file.path(geo_tiff_dir,
+                                                 paste0(names(allmasked)[i],
+                                                        "stack.tif")),
+                            format = "GTiff",
+                            bylayer = F,
+                            overwrite = T) }
     }
 
     ## ## CRS for most of the raster layers
