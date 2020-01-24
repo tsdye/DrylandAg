@@ -345,6 +345,8 @@ dryland_ag <- function(root_dir,
     allcropped <- lapply(allstacks,
                          FUN = function(x, y = area_of_interest) crop(x, y))
 
+    if(verbose == TRUE) message("Creating masks")
+
     ## Create MASKS so we focus on field systems
     ## Note DEM, Temp layers, and 250m ET atlas layers have diff CRS, resolutions!
                                         # DEM mask, note 10m resolution
@@ -355,7 +357,7 @@ dryland_ag <- function(root_dir,
     in_shape_crs_1.crop250temp <- is.na(mask(allcropped$tmax, in_shape_crs_2))
 
     ## Create a list of masked rasters
-    allmasked<-list()
+    allmasked <- list()
     for (i in 1:length(allcropped))
         allmasked[[i]] <- switch(names(allcropped)[i],
                                  dem = mask(allcropped[[i]],
