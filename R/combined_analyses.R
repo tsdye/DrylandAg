@@ -462,8 +462,11 @@ combined_analyses <- function(working_dir,
                                       names(threshold)[i])))
     }
 
-    ret <- list(plant2 = plant2, wys = wys, wy.mo = wy.mo,
-                aridity.ann = aridity.ann, C = C,
+    ret <- list(plant2 = plant2,
+                wys = wys,
+                wy.mo = wy.mo,
+                aridity.ann = aridity.ann,
+                C = C,
                 plant_index = c(1:9),
                 plant2_index = c(10:20))
 
