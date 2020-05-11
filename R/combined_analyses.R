@@ -49,10 +49,8 @@ combined_analyses <- function(working_dir,
 
     library('raster')
     library('rgdal')
-    library('rgeos')  # used to crop the ahupuaa shapefile for plotting
+    ## library('rgeos')  # used to crop the ahupuaa shapefile for plotting
     library('sp')
-
-
 
 ########### DEFINE FUNCTIONS to calculate seasonality statistics ########################
     #' Pmonthly calculates the monthly probability distribution

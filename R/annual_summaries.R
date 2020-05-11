@@ -124,7 +124,7 @@ plot_annual_metrics <- function(data = NULL,
                                   order_legend = FALSE,
                                   palette = "bright",
                                   default_palette = "viridis",
-                                  png_dpi =120,
+                                  png_dpi = 120,
                                   verbose = TRUE) {
 
     library('ggplot2')
@@ -200,7 +200,7 @@ plot_wind_metrics <- function(data = NULL,
                               order_legend = FALSE,
                               palette = "bright",
                               default_palette = "viridis",
-                              png_dpi =120,
+                              png_dpi = 120,
                               verbose = TRUE) {
 
     library('ggplot2')
@@ -279,7 +279,7 @@ plot_rainfall_metrics <- function(data = NULL,
                                 order_legend = FALSE,
                                 palette = "bright",
                                 default_palette = "viridis",
-                                png_dpi =120,
+                                png_dpi = 120,
                                 verbose = TRUE) {
 
     library('ggplot2')
